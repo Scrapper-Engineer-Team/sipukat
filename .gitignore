@@ -19,4 +19,4 @@ Thumbs.db
 # Ignore compiled Python files
 *.pyc
 
-src/asset/
+src/asset/*.zip
