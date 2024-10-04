@@ -54,7 +54,7 @@ class RSTP:
             file_name = f'{data["isi"]["title"]}_{data["isi"]["Kawasan"]}_{data["isi"]["Lokasi"]}.json'
             json_path = f"sempel/sipukat/rtsp/json/{file_name.replace(' ', '_').replace('/', '_')}"
 
-            return {
+            return print({
                 "link": "https://e-database.kemendagri.go.id/kemendagri/dataset/532/tabel-data",
                 "tags": [
                     "sipukat",
@@ -80,20 +80,23 @@ class RSTP:
                 "level": "Nasional",
                 "stage": "Crawling data",
                 "update_schedule": "daily"
-            }
+            })
     
     def get_cordinate(self, file_path):
         # Membuat instance dari CordinateCheck
         cordinate_check = CordinateCheck()
 
         # Mendapatkan latitude dan longitude dari file
-        with ThreadPoolExecutor(max_workers=300) as executor:
+        with ThreadPoolExecutor(max_workers=25) as executor:
             futures = []
             for idx, latlong in enumerate(cordinate_check.read_cordinate_data(file_path)):
                 for i in range(10, 19):
+                    latitude = latlong["latitude"]
+                    longitude = latlong["longitude"]
+
                     data = {
-                        'x': f"{latlong['latitude']}",
-                        'y': f"{latlong['longitude']}",
+                        'x': latitude,
+                        'y': longitude,
                         'mz': f'{i}',
                         'idL': '||||||1|||||||',
                         'idP': 'i_jalan|i_prm|i_sp|i_wst|i_bum|i_pru|i_rtsp|i_rskp|info4|info2|info8|infokp|info',
@@ -106,6 +109,7 @@ class RSTP:
                 for future in futures:
                     metadata = future.result()
                     if(metadata):
-                        with open(f"src/sempel/RSTP/{idx}.json", "w") as f:
+                        with open(f"src/sempel/RSTP/{latitude}_{longitude}.json", "w") as f:
                             f.write(json.dumps(metadata))
                         logger.success(json.dumps(metadata))
+                        break
