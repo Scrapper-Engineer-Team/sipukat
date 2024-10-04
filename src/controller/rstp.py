@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 class RSTP:
     def __init__(self):
-
         self.headers = {
             'Accept': '*/*',
             'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -26,7 +25,7 @@ class RSTP:
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Linux"',
         }
-    
+
     def _process_data(self, data):
         response = requests.post('https://sipukat.kemendesa.go.id/i.php', headers=self.headers, data=data)
         logger.info(f'{data} :: {response}')
@@ -41,38 +40,29 @@ class RSTP:
 
             isi = {}
             for k, v in zip(key, value):
-                data_akhir = {
-                    'title': titles.text.strip(),
-                    k.text.strip(): v.text.strip(),
-                }
-                isi.update(data_akhir)
-            data.update({'isi': isi})
+                isi[k.text.strip()] = v.text.strip()
 
+            data.update({'isi': isi})
             data['pol'] = ast.literal_eval(data['pol'])
             data['pol'] = [[coord[1], coord[0]] for coord in data['pol']]
 
-            file_name = f'{data["isi"]["title"]}_{data["isi"]["Kawasan"]}_{data["isi"]["Lokasi"]}.json'
-            json_path = f"sempel/sipukat/rtsp/json/{file_name.replace(' ', '_').replace('/', '_')}"
-
-            return print({
+            metadata = {
                 "link": "https://e-database.kemendagri.go.id/kemendagri/dataset/532/tabel-data",
                 "tags": [
                     "sipukat",
                     "rtsp"
                 ],
                 "source": "sipukat.kemendesa.go.id",
-                "title": data['isi']['title'],
+                "title": isi['title'],
                 "sub_title": "",
-                "range_data": data["isi"]["Tahun"],
+                "range_data": isi.get("Tahun", ""),
                 "create_date": "",
                 "update_date": "",
                 "desc": "",
                 "category": "RTSP",
                 "sub_category": "",
-                "data":data,
-                "path_data_raw": [
-                    json_path
-                ],
+                "data": data,
+                "path_data_raw": [],
                 "crawling_time": "2024-07-26 22:24:49",
                 "crawling_time_epoch": 1722007489,
                 "table_name": "judul_tabel",
@@ -80,11 +70,15 @@ class RSTP:
                 "level": "Nasional",
                 "stage": "Crawling data",
                 "update_schedule": "daily"
-            })
-    
+            }
+            return metadata
+
     def get_cordinate(self, file_path):
         # Membuat instance dari CordinateCheck
         cordinate_check = CordinateCheck()
+
+        # List untuk menyimpan semua metadata
+        all_metadata = []
 
         # Mendapatkan latitude dan longitude dari file
         with ThreadPoolExecutor(max_workers=25) as executor:
@@ -106,10 +100,16 @@ class RSTP:
                         executor.submit(self._process_data, data)
                     )
 
-                for future in futures:
-                    metadata = future.result()
-                    if(metadata):
-                        with open(f"src/sempel/RSTP/{latitude}_{longitude}.json", "w") as f:
-                            f.write(json.dumps(metadata))
-                        logger.success(json.dumps(metadata))
-                        break
+            # Mengumpulkan semua metadata
+            for future in futures:
+                metadata = future.result()
+                if metadata:
+                    all_metadata.append(metadata)
+
+        # Menyimpan semua metadata dalam satu file JSON
+        if all_metadata:
+            file_name = "src/sempel/RSTP/all_data.json"
+            with open(file_name, "w") as f:
+                json.dump(all_metadata, f, indent=4)
+            logger.success(f"All data saved in: {file_name}")
+
