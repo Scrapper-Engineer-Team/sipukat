@@ -46,21 +46,23 @@ class RSTP:
             data['pol'] = ast.literal_eval(data['pol'])
             data['pol'] = [[coord[1], coord[0]] for coord in data['pol']]
 
+            title = isi.get("title", "")
+            tahun = isi.get("Tahun", "")
             metadata = {
-                "link": "https://e-database.kemendagri.go.id/kemendagri/dataset/532/tabel-data",
+                "link": "https://sipukat.kemendesa.go.id/petaterpadu.php?v=2021",
                 "tags": [
                     "sipukat",
                     "rtsp"
                 ],
                 "source": "sipukat.kemendesa.go.id",
-                "title": isi['title'],
-                "sub_title": "",
-                "range_data": isi.get("Tahun", ""),
-                "create_date": "",
-                "update_date": "",
-                "desc": "",
+                "title": title if title else None,
+                "sub_title": None,
+                "range_data": tahun if tahun else None,
+                "create_date": None,
+                "update_date": None,
+                "desc": None,
                 "category": "RTSP",
-                "sub_category": "",
+                "sub_category": None,
                 "data": data,
                 "path_data_raw": [],
                 "crawling_time": "2024-07-26 22:24:49",
